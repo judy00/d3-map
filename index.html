@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>D3 map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <script src="/javascripts/vendor.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.0.2/vue.global.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.3.0/d3.min.js"></script>
+</head>
+
+<body>
+  <main>
+    <div id="app">
+      <div class="container">
+        <svg width="900" height="900"></svg>
+      </div>
+    </div>
+
+    <script type="module">
+      const App = {
+        data() {
+          return {
+            taiwanCountry: []
+          }
+        },
+        mounted() {
+          const width = window.innerWidth * 0.5;
+          const height = window.innerHeight * 0.5;
+          const svg = d3.select("svg");
+
+          let projection
+          let geoGenerator
+          let path
+
+          d3.json('./COUNTY_MOI_1090820.json')
+            .then((data) => {
+              projection = d3.geoMercator()
+                .scale(10000)
+                .center([120,24])
+                .translate([width / 2, height / 2]);
+
+              geoGenerator = d3.geoPath().projection(projection);
+
+              // 畫地圖
+              svg
+                .append("g")
+                .selectAll("path")
+                .data(data.features)
+                .enter()
+                .append("path")
+                .attr("d", geoGenerator)
+                .attr("fill", "#202d49")
+                .style("stroke", "#FFF")
+            });
+        }
+      }
+
+      Vue.createApp(App).mount('#app');
+    </script>
+  </main>
+
+  <link rel="stylesheet" href="style.css">
+</body>
+</html>
