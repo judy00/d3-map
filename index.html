@@ -7,14 +7,18 @@
   <meta charset="UTF-8">
   <script src="/javascripts/vendor.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.0.2/vue.global.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.26.1/axios.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.3.0/d3.min.js"></script>
+  <script src="https://unpkg.com/topojson@3"></script>
 </head>
 
 <body>
   <main>
     <div id="app">
       <div class="container">
-        <svg width="900" height="900"></svg>
+        <svg>
+          <g class="counties"></g>
+        </svg>
       </div>
     </div>
 
@@ -22,38 +26,37 @@
       const App = {
         data() {
           return {
-            taiwanCountry: []
+            revenues: []
           }
         },
-        mounted() {
-          const width = window.innerWidth * 0.5;
-          const height = window.innerHeight * 0.5;
-          const svg = d3.select("svg");
+        created() {
+          this.getGeomap()
+        },
+        methods: {
+          getGeomap() {
+            return axios.get('https://hexschool.github.io/tw_revenue/taiwan-geomap.json')
+              .then(resp => {
+                this.draw(resp.data)
+              });
+          },
+          draw(mapData) {
+            const width = window.innerWidth * 0.5;
+            const height = window.innerHeight * 0.5;
+            const projection = d3.geoMercator()
+              .scale(10000)
+              .center([121,25])
+              .translate([width / 2, height / 2]);
 
-          let projection
-          let geoGenerator
-          let path
+            const geoGenerator = d3.geoPath().projection(projection);
+            console.log('features :>> ', topojson.feature(mapData, mapData.objects["COUNTY_MOI_1090820"]).features);
 
-          d3.json('./COUNTY_MOI_1090820.json')
-            .then((data) => {
-              projection = d3.geoMercator()
-                .scale(10000)
-                .center([120,24])
-                .translate([width / 2, height / 2]);
-
-              geoGenerator = d3.geoPath().projection(projection);
-
-              // 畫地圖
-              svg
-                .append("g")
-                .selectAll("path")
-                .data(data.features)
-                .enter()
-                .append("path")
-                .attr("d", geoGenerator)
-                .attr("fill", "#202d49")
-                .style("stroke", "#FFF")
-            });
+            d3.select('g.counties')
+              .selectAll("path")
+              .data(topojson.feature(mapData, mapData.objects["COUNTY_MOI_1090820"]).features)
+              .enter()
+              .append("path")
+              .attr("d", geoGenerator)
+          }
         }
       }
 
