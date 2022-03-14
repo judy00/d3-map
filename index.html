@@ -19,6 +19,14 @@
         <svg>
           <g class="counties"></g>
         </svg>
+        <div class="info-wrap">
+          <h4 v-if="!currentCity.COUNTYNAME">滑鼠移至地區上方查看業績</h4>
+          <template v-else>
+            <h2>{{ currentCity.COUNTYNAME }}</h2>
+            <h4>{{ currentCity.COUNTYENG }}</h4>
+            <h3>業績：{{ currentCity.revenue }}</h3>
+          </template>
+        </div>
       </div>
     </div>
 
@@ -26,36 +34,88 @@
       const App = {
         data() {
           return {
-            revenues: []
+            features: [],
+            currentCityCode: ''
+          }
+        },
+        computed: {
+          currentCity () {
+            const area = this.features.find(county => county.properties.COUNTYCODE === this.currentCityCode)
+            if (area) {
+              const { properties: {COUNTYNAME, COUNTYENG, revenue} } = area
+              return {
+                COUNTYNAME,
+                COUNTYENG,
+                revenue
+              }
+            } else {
+              return {
+                COUNTYNAME: '',
+                COUNTYENG: '',
+                revenue: 0
+              }
+            }
           }
         },
         created() {
-          this.getGeomap()
+          Promise.all([this.getGeomap(), this.getRevenue()])
+            .then(([map, revenues]) => {
+              const features = topojson.feature(map, map.objects["COUNTY_MOI_1090820"]).features
+
+              features.forEach(county => {
+                const COUNTYNAME = county.properties.COUNTYNAME
+
+                const revenueCounty = revenues[0].data.find(revenueCounty => revenueCounty.city === COUNTYNAME)
+                if (revenueCounty) {
+                  county.properties.revenue = Number(revenueCounty.revenue.replace(/,+/g,''))
+                } else {
+                  county.properties.revenue = 0
+                }
+              })
+              this.features = features
+              this.draw(features)
+            })
         },
         methods: {
           getGeomap() {
             return axios.get('https://hexschool.github.io/tw_revenue/taiwan-geomap.json')
-              .then(resp => {
-                this.draw(resp.data)
-              });
+              .then(resp => resp.data);
           },
-          draw(mapData) {
+          getRevenue() {
+            return axios.get('https://hexschool.github.io/tw_revenue/tw_revenue.json')
+              .then(resp => resp.data);
+          },
+          draw(mapFeatures) {
             const width = window.innerWidth * 0.5;
             const height = window.innerHeight * 0.5;
             const projection = d3.geoMercator()
               .scale(10000)
-              .center([121,25])
+              .center([120.8,25])
               .translate([width / 2, height / 2]);
 
             const geoGenerator = d3.geoPath().projection(projection);
-            console.log('features :>> ', topojson.feature(mapData, mapData.objects["COUNTY_MOI_1090820"]).features);
+            const colorScale = d3
+              .scaleLinear()
+              .domain([
+                d3.min(mapFeatures, d => d.properties.revenue),
+                d3.max(mapFeatures, d => d.properties.revenue)
+              ])
+              .range([
+                '#bcafb0',
+                '#ec595c'
+              ]);
 
             d3.select('g.counties')
               .selectAll("path")
-              .data(topojson.feature(mapData, mapData.objects["COUNTY_MOI_1090820"]).features)
+              .data(mapFeatures)
               .enter()
               .append("path")
               .attr("d", geoGenerator)
+              .attr("id", (d) => d.properties.COUNTYCODE)
+              .attr("fill", d => colorScale(d.properties.revenue))
+              .on('mouseenter', (d) => {
+                this.currentCityCode = d.target.getAttribute('id')
+              })
           }
         }
       }

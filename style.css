@@ -1,21 +1,60 @@
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  font-family: '微軟正黑體', sans-serif
+}
 
-.body {
+body {
+  background-color: #202d49;
+}
+
+.container {
+  max-width: 960px;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  margin: 0 auto;
 }
 
 svg {
-  width: 100%;
   height: 100vh;
-  background-color: #202d49;
+  flex: 7;
+}
+
+.info-wrap {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.info-wrap h2 {
+  color: white;
+  font-size: 20px;
+  letter-spacing: 5px;
+  margin-bottom: 8px;
+}
+
+.info-wrap h3 {
+  color: #f8f8f8;
+  font-size: 18px;
+  letter-spacing: 2px;
+  margin: 0;
+}
+
+.info-wrap h4 {
+  color: #c2c2c2;
+  font-size: 12px;
+  letter-spacing: 2px;
+  margin: 0;
+  margin-bottom: 20px;
 }
 
 .counties {
   fill:#d6d6d6;
   stroke: #FFF;
 }
+
 .counties :hover {
-  fill: #a7b6d8;
-  transition: 0.5s;
+  fill: #e7a279;
+  transition: .3s;
 }
